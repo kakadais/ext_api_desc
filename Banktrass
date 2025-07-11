@@ -1,0 +1,350 @@
+
+## 001. Banktrass 수출입 통계 API 명세표 (001 고객동의 및 요약정보 조회)
+### ✅ 001. 고객동의 및 요약정보 조회 프로세스 요약
+
+1. **고객 동의 내역 및 신고 정보 요약을 조회**하기 위해 `serv_code=001`로 API 호출
+    
+2. 필수 요청값으로는 `사업자번호(txpr_bmen_no)`와 `api 키(crkyCn)`가 포함됨
+    
+3. **전자상거래(E), 일반(N)** 구분 가능 (`exp_type` 활용)
+    
+4. 신고번호 사용 여부에 따라 날짜 조건(`str_date`, `end_date`) 입력 방식이 달라짐
+    
+5. 응답은 고객 동의 여부 및 요약 정보(신고금액 구간, 목적국, 구매자 정보 등)를 포함
+    
+6. `InfoQryVo`를 통해 다건의 신고 요약 내역을 반복 항목으로 수신 가능
+    
+
+
+---
+### ✅ 1. 고객동의 및 요약정보 요청
+
+**POST**  
+`https://banktrass.or.kr/api/statisticSearch.do?command=bankTmyPlusApi`
+
+**Remarks**  
+고객 동의 여부 및 요약 신고금액 정보를 조회하는 Banktrass API입니다.
+
+**Request**
+
+| Parameters   | 타입     | 필수여부 | 설명                                |
+| ------------ | ------ | ---- | --------------------------------- |
+| command      | String | Y    | bankTmyPlusApi (고정값)              |
+| crkyCn       | String | Y    | API 사용 키값                         |
+| serv_code    | String | Y    | 서비스 코드: 001                       |
+| txpr_bmen_no | String | Y    | 사업자등록번호                           |
+| exp_type     | String | N    | 수출통관구분 (E: 전자상거래, N: 일반)          |
+| str_date     | String | 조건부  | 조회 시작일 (신고일 기준, 신고번호 미사용 시 필수)    |
+| end_date     | String | 조건부  | 조회 종료일 (신고일 기준, 신고번호 미사용 시 필수)    |
+| dst_natn_cd  | String | N    | 목적국 코드 (예: SG)                    |
+| byr_crp      | String | N    | 구매자 상호 (세미콜론 구분으로 다중 입력 가능)       |
+| tot_amt_from | Number | N    | 총 신고금액 조회 시작 구간 ($), 천단위 구분기호 미포함 |
+| tot_amt_to   | Number | N    | 총 신고금액 조회 종료 구간 ($), 천단위 구분기호 미포함 |
+| exp_dclr_no  | String | N    | 수출신고번호 (입력 시 기타 조건 무시됨)           |
+
+**샘플 URL**  
+`https://banktrass.or.kr/api/statisticSearch.do?command=bankTmyPlusApi&crkyCn=m200f166e065e142a040e050s2&serv_code=001&txpr_bmen_no=2208897335&exp_type=E&str_date=2023-09-01&end_date=2023-09-10&dst_natn_cd=SG&byr_crp=irene&tot_amt_from=5&tot_amt_to=140000&exp_dclr_no=45284235ND889E`
+
+### ✅ 2. 고객동의 및 요약정보 응답
+
+**Response(JSON)**
+
+```json
+{
+  "result_code": "00",
+  "result_message": "",
+  "serv_code": "001",
+  "use_api_cnt": 1,
+  "agree": "Y",
+  "txpr_bmen_no": "2208897335",
+  "str_date": "2023-09-01",
+  "end_date": "2023-09-10",
+  "dst_natn_cd": "SG",
+  "byr_crp": "irene",
+  "exp_type": "E",
+  "exp_dclr_no": "45284235ND889E",
+  "tot_amt_from": 5,
+  "tot_amt_to": 140000,
+  "data_seq": 1000001,
+  "InfoQryVo": [
+    {
+      "exp_type": "E",
+      "exp_dclr_no": "45284235ND889E",
+      "dcl_date": "20230901",
+      "dst_natn_cd": "SG",
+      "tot_amt_of_dlr": 123456.78,
+      "byr_crp": "abcde******",
+      "tot_wght": 2000.5,
+      "chg_dt": "20230905120000"
+    }
+  ]
+}
+```
+
+**Response 필드 설명**
+
+|필드명|타입|설명|
+|---|---|---|
+|result_code|String|호출 응답 코드 (00: 성공)|
+|result_message|String|오류 시 메시지|
+|serv_code|String|요청한 서비스 코드|
+|use_api_cnt|Number|호출 시 응답 카운트|
+|agree|String|고객 동의 여부 (Y/N)|
+|txpr_bmen_no|String|사업자등록번호|
+|str_date|String|검색 시작일|
+|end_date|String|검색 종료일|
+|dst_natn_cd|String|목적국|
+|byr_crp|String|구매자 상호|
+|exp_type|String|수출구분|
+|exp_dclr_no|String|수출신고번호|
+|tot_amt_from|Number|총신고금액 구간 시작값 ($)|
+|tot_amt_to|Number|총신고금액 구간 종료값 ($)|
+|data_seq|Number|응답 고유 키값|
+|InfoQryVo|Object[]|신고번호 리스트 배열|
+|└ exp_type|String|수출통관구분|
+|└ exp_dclr_no|String|수출신고번호|
+|└ dcl_date|String|신고일자 (YYYYMMDD)|
+|└ dst_natn_cd|String|목적국|
+|└ tot_amt_of_dlr|Number|총금액($)|
+|└ byr_crp|String|구매자(마스킹됨)|
+|└ tot_wght|Number|총중량|
+|└ chg_dt|String|최종 변경일시 (YYYYMMDDHHMMSS)|
+
+---
+---
+
+## 002. Banktrass 수출입 통계 API 명세표 (002 일반 신고건 상세조회)
+
+### ✅ 002. 일반 수출신고 상세 조회 프로세스 요약 (exp_type = N)
+
+1. **개별 일반 수출신고 상세내역**을 조회하기 위해 `serv_code=002`와 `exp_type=N`으로 API 호출
+    
+2. 필수 요청값: `신고번호(exp_dclr_no)`, `사업자번호`, `crkyCn`
+    
+3. 응답에는 기본 신고정보(`dcl_date`, `tot_amt_of_dlr`, `dst_natn_cd`) 외에
+    
+    - **거래품목 정보(`InfoQryVoLn`)**
+        
+    - **BL 정보(`InfoQryVoBn`)** 등 다건 구조 포함
+        
+4. 각 하위 항목은 라인번호, 거래품명, 금액, 중량 등 품목 상세를 포함
+    
+5. 통화코드, 인도조건, 선적항 등의 물류 정보도 함께 포함됨
+
+
+### ✅ 1. 일반 신고건 상세조회 요청
+
+**GET**  
+`https://banktrass.or.kr/api/statisticSearch.do?command=bankTmyPlusApi`
+
+**Remarks**  
+수출입 신고번호를 기반으로 상세 신고 내역을 조회하는 Banktrass API입니다.
+
+**Request**
+
+| 항목          | 값/타입                       | 설명                         | 비고1 | 비고2 | 필수 구분 |
+| ----------- | -------------------------- | -------------------------- | --- | --- | ----- |
+| command     | bankTmyPlusApi             | 서비스 url 매핑 정보              | 고정값 |     | 필수    |
+| crkyCn      | m200f166e065e142a040e050s2 | API 사용 키값                  | 고정값 |     | 필수    |
+| serv_code   | 002                        | 서비스 코드 (002 : 신고번호 상세조회)   |     |     | 필수    |
+| exp_type    | N                          | 수출통관구분 (E : 전자상거래, N : 일반) |     |     | 필수    |
+| exp_dclr_no | 4386120500941X             | 신고번호                       |     |     | 필수    |
+
+**샘플 URL**  
+`https://banktrass.or.kr/api/statisticSearch.do?command=bankTmyPlusApi&crkyCn=m200f166e065e142a040e050s2&serv_code=002&exp_type=N&exp_dclr_no=4386120500941X`
+
+### ✅ 2. 일반 신고건 상세조회 응답
+
+**Response(JSON)**
+
+```json
+{
+  "result_code": "00",
+  "result_message": "",
+  "serv_code": "002",
+  "use_api_cnt": 1,
+  "agree": "Y",
+  "exp_dclr_no": "4386120500941X",
+  "exp_type": "N",
+  "bank_submit_info": "신고번호 연동 정보",
+  "data_seq": 1000002,
+  "InfoQryVo": [ ... ]
+}
+```
+
+**Response 필드 설명**
+
+| 항목                  | 설명             | 비고                 | 데이터 타입   | 길이    |
+| ------------------- | -------------- | ------------------ | -------- | ----- |
+| result_code         | 호출 응답 코드       | 00을 제외한 나머지는 에러    | varchar2 | 2     |
+| result_message      | 호출 응답 코드 한글 설명 | 응답 코드가 00일 경우 값 없음 | varchar2 | 150   |
+| serv_code           | 서비스 코드         |                    | varchar2 | 3     |
+| use_api_cnt         | API 응답 카운트     |                    | number   | 10    |
+| agree               | 고객 동의 여부       |                    | varchar2 | 1     |
+| exp_dclr_no         | 신고번호           | API 호출 시 파라미터 정보   | varchar2 | 10    |
+| exp_type            | 수출구분           |                    | varchar2 | 1     |
+| bank_submit_info    | 수출신고번호 호출 정보   | 은행 무관 신고번호 호출 정보   | varchar2 | 300   |
+| data_seq            | 응답 키값          |                    | number   | 10    |
+| └ exp_dclr_no       | 신고번호           |                    | varchar2 | 15    |
+| └ dcl_date          | 신고일            | YYYYMMDD           | varchar2 | 8     |
+| └ exp_prmt_date     | 수리일            | YYYYMMDD           | varchar2 | 8     |
+| └ mnur_conm         | 제조자상호          |                    | varchar2 | 150   |
+| └ expr_ditc         | 수출자 구분 코드      |                    | varchar2 | 1     |
+| └ dcl_ditc_cd       | 신고 구분 코드       |                    | varchar2 | 1     |
+| └ trsc_ditc_cd      | 수출 거래 구분 코드    |                    | varchar2 | 10    |
+| └ exp_clsf_cd       | 수출 종류          |                    | varchar2 | 1     |
+| └ byr_crp           | 구매자 상호         |                    | varchar2 | 150   |
+| └ dst_natn_cd       | 목적국            |                    | varchar2 | 2     |
+| └ tot_amt_of_dlr    | 총 금액($)        |                    | number   | 22    |
+| └ stl_mthd_cd       | 결제방법 코드        |                    | varchar2 | 2     |
+| └ curr_cd           | 통화 코드          |                    | varchar2 | 3     |
+| └ stl_amt           | 결제 금액          |                    | number   | 18,4  |
+| └ tot_wght          | 총 중량           |                    | number   | 18,4  |
+| └ ldng_wght         | 선적 중량          |                    | number   | 18,4  |
+| └ used_yn           | 물품 상태 구분       |                    | varchar2 | 1     |
+| └ dcer_sttm_matr_cn | 신고인 기재란        |                    | varchar2 | 750   |
+| └ stl_cnd           | 인도 조건 코드       |                    | varchar2 | 3     |
+| └ ovcs_natn_cd      | 구매자 국가 코드      |                    | varchar2 | 2     |
+| └ ldng_port_cd      | 선적항 코드         |                    | varchar2 | 8     |
+| └ ldng_port_nm      | 선적항 명칭         |                    | varchar2 | 200   |
+| └ shco_flco_nm      | 선사항공사명         |                    | varchar2 | 250   |
+| └ sanm              | 선기명            |                    | varchar2 | 100   |
+| └ bntr_dclr         | 보세운송신고인명       |                    | varchar2 | 250   |
+| └ trdr_crp          | 수출대행자          |                    | varchar2 | 250   |
+| └ line_no_cnt       | 신고번호 란 정보 카운트  |                    | number   | 3     |
+| └ InfoQryVoLn       | 거래품목 정보 목록     |                    | -        | -     |
+| └└ line_no          | 란번호            |                    | number   | 3     |
+| └└ gods_name_size2  | 거래품명           |                    | varchar2 | 300   |
+| └└ hs_cd            | 세번             |                    | varchar2 | 10    |
+| └└ net_wght         | 순중량            |                    | number   | 18,4  |
+| └└ qty              | 수량             |                    | number   | 32,10 |
+| └└ qty_unit         | 수량단위           |                    | varchar2 | 3     |
+| └└ amt_of_dlr       | 신고금액($)        |                    | number   | 28,6  |
+| └└ gods_cd          | 송품장번호          |                    | varchar2 | 50    |
+| └ bl_no_cnt         | 신고번호 BL 정보 카운트 |                    | number   | 3     |
+| └ InfoQryVoBn       | BL 정보 목록       |                    | -        | -     |
+| └└ bl_no            | BL번호           |                    | varchar2 | 20    |
+| └└ depat_date       | 출항일            |                    | varchar2 | 8     |
+| └└ consgr_crp       | 수하인            |                    | varchar2 | 150   |
+| └└ notfr_crp        | 통지처            |                    | varchar2 | 150   |
+| └└ comp_cd          | 선사부호           |                    | varchar2 | 4     |
+| └└ conslr_cd        | 운송주선인부호        |                    | varchar2 | 4     |
+| └└ conslr_crp       | 운송주선인          |                    | varchar2 | 150   |
+| └└ vsl_name         | 선박명            |                    | varchar2 | 75    |
+| └└ ldng_port_cd     | 선적항 코드         |                    | varchar2 | 5     |
+| └└ ldng_port_nm     | 선적항 명칭         |                    | varchar2 | 200   |
+| └└ ldng_cnty_cd     | 선적지 국가 코드      |                    | varchar2 | 2     |
+| └└ unldng_port_cd   | 양륙항 코드         |                    | varchar2 | 5     |
+| └└ unldng_port_nm   | 양륙항 명칭         |                    | varchar2 | 200   |
+| └└ unldng_cnty_cd   | 양륙항 국가 코드      |                    | varchar2 | 2     |
+
+
+---
+---
+
+##  002.Banktrass 수출입 통계 API 명세표 (002 전자상거래 신고건 상세조회)
+
+### ✅ 002. 전자상거래 수출신고 상세 조회 프로세스 요약 (exp_type = E)
+
+1. **전자상거래 신고번호에 대한 상세내역**을 조회하려면 `serv_code=002`와 `exp_type=E`로 API 호출
+    
+2. 필수 요청값: `신고번호(exp_dclr_no)`, `crkyCn`
+    
+3. 응답 구조는 일반신고와 유사하지만 다음과 같은 항목에 특화됨:
+    
+    - `ord_no`: 주문번호
+        
+    - `web_pge_url`: 쇼핑몰 웹사이트 주소
+        
+    - `elcm_stlm_mcd`: 전자결제 수단 코드
+        
+4. `InfoQryVoLn` 구조를 통해 거래품목 목록 수신
+    
+    - 제조자, 품명, 수량, 순중량, 신고금액 등의 정보 포함
+        
+5. BL 정보는 별도로 제공되지 않음 (전자상거래 특성상 생략됨 가능)
+    
+
+### ✅ 1. 전자상거래 신고건 상세조회 요청
+
+**GET**  
+`https://banktrass.or.kr/api/statisticSearch.do?command=bankTmyPlusApi`
+
+**Remarks**  
+전자상거래 수출신고번호를 기반으로 상세 신고 내역을 조회하는 Banktrass API입니다.
+
+**Request**
+
+|항목|값/타입|설명|비고1|비고2|필수 구분|
+|---|---|---|---|---|---|
+|command|bankTmyPlusApi|서비스 url 매핑 정보|고정값||필수|
+|crkyCn|m200f166e065e142a040e050s2|API 사용 키값|고정값||필수|
+|serv_code|002|서비스 코드 (002 : 신고번호 상세조회)|||필수|
+|exp_type|E|수출통관구분 (E : 전자상거래, N : 일반)|||필수|
+|exp_dclr_no|1334123AAQM01E|신고번호|||필수|
+
+**샘플 URL**  
+`https://banktrass.or.kr/api/statisticSearch.do?command=bankTmyPlusApi&crkyCn=m200f166e065e142a040e050s2&serv_code=002&exp_type=E&exp_dclr_no=1334123AAQM01E`
+
+---
+
+### ✅ 2. 전자상거래 신고건 상세조회 응답
+
+**Response(JSON)**
+
+```json
+{
+  "result_code": "00",
+  "result_message": "",
+  "serv_code": "002",
+  "use_api_cnt": 1,
+  "agree": "Y",
+  "exp_dclr_no": "1334123AAQM01E",
+  "exp_type": "E",
+  "bank_submit_info": "신고번호 연동 정보",
+  "data_seq": 1234567890,
+  "InfoQryVo": [ ... ]
+}
+```
+
+**Response 필드 설명**
+
+|항목|설명|비고|데이터 타입|길이|
+|---|---|---|---|---|
+|result_code|호출 응답 코드|00을 제외한 나머지는 에러|varchar2|2|
+|result_message|호출 응답 코드 한글 설명|응답 코드가 00일 경우 값 없음|varchar2|150|
+|serv_code|서비스 코드||varchar2|3|
+|use_api_cnt|API 응답 카운트||number|10|
+|agree|고객 동의 여부||varchar2|1|
+|exp_dclr_no|신고번호|API 호출 시 파라미터 정보|varchar2|10|
+|exp_type|수출구분||varchar2|1|
+|bank_submit_info|수출신고번호 호출 정보|은행 무관 신고번호 호출 정보|varchar2|300|
+|data_seq|응답 키값||number|10|
+|└ exp_dclr_no|신고번호||varchar2|15|
+|└ dcl_date|신고일|YYYYMMDD|varchar2|8|
+|└ exp_prmt_date|수리일|YYYYMMDD|varchar2|8|
+|└ trsc_ditc_cd|수출 거래구분코드||varchar2|3|
+|└ byr_crp|구매자 상호||varchar2|150|
+|└ dst_natn_cd|목적국||varchar2|2|
+|└ elcm_stlm_mcd|결제방법||varchar2|2|
+|└ ord_no|주문번호||varchar2|30|
+|└ web_pge_url|웹페이지 URL||varchar2|200|
+|└ tot_amt_of_dlr|총 금액($)||number|22|
+|└ stl_amt|결제금액||number|32,10|
+|└ curr_cd|통화부호||varchar2|3|
+|└ tot_wght|총중량||number|18,4|
+|└ ents_nm|운송인||varchar2|150|
+|└ stl_cnd|인도조건||varchar2|3|
+|└ ldng_port_cd|선적항 코드||varchar2|5|
+|└ ldng_port_nm|선적항 코드명||varchar2|200|
+|└ ldng_cnty_cd|선적항 국가 코드||varchar2|2|
+|└ line_no_cnt|신고번호 란 정보 카운트||number|3|
+|└ InfoQryVoLn|거래품목 정보 목록||-|-|
+|└└ line_no|란번호||number|3|
+|└└ mnur_conm|제조자||varchar2|150|
+|└└ net_wght|순중량||number|18,4|
+|└└ qty|수량||number|32,10|
+|└└ gods_name_size1|품명||varchar2|300|
+|└└ hs_cd|세번||varchar2|10|
+|└└ amt_of_dlr|신고금액($)||number|28,6|
+|└└ expr_ditc|수출자 구분코드||varchar2|1|
